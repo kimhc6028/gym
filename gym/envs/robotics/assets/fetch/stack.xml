@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mujoco>
 	<compiler angle="radian" coordinate="local" meshdir="../stls/fetch" texturedir="../textures"></compiler>
+    <size njmax="8000" nconmax="4000"/>
+
 	<option timestep="0.002">
 		<flag warmstart="enable"></flag>
 	</option>
