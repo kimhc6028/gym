@@ -56,6 +56,7 @@ class FetchEnv(robot_env.RobotEnv):
     # ----------------------------
 
     def compute_reward(self, achieved_goal, goal, info):
+        ##TODO: goal must be list if multi-goals
         # Compute distance between goal and the achieved goal.
         d = goal_distance(achieved_goal, goal)
         if self.reward_type == 'sparse':
@@ -110,6 +111,7 @@ class FetchEnv(robot_env.RobotEnv):
             object_pos = object_rot = object_velp = object_velr = object_rel_pos = np.zeros(0)
         gripper_state = robot_qpos[-2:]
         gripper_vel = robot_qvel[-2:] * dt  # change to a scalar if the gripper is made symmetric
+        ##TODO: goal must be list if multi-goals
 
         if not self.has_object:
             achieved_goal = grip_pos.copy()
@@ -138,9 +140,16 @@ class FetchEnv(robot_env.RobotEnv):
     def _render_callback(self):
         # Visualize target.
         sites_offset = (self.sim.data.site_xpos - self.sim.model.site_pos).copy()
-        site_id = self.sim.model.site_name2id('target0')
-        self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
-        self.sim.forward()
+        ##TODO: multiple targets
+        if self.use_stack:
+            for i in range(6):
+                site_id = self.sim.model.site_name2id('target{}'.format(i))
+                self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
+                self.sim.forward()
+        else:
+            site_id = self.sim.model.site_name2id('target0')
+            self.sim.model.site_pos[site_id] = self.goal - sites_offset[0]
+            self.sim.forward()
 
     def _reset_sim(self):
         self.sim.set_state(self.initial_state)
@@ -160,7 +169,7 @@ class FetchEnv(robot_env.RobotEnv):
             if self.use_stack:
                 def not_far(object_xpos, xposes):
                     for xpos in xposes:
-                        if np.linalg.norm(object_xpos, xpos) < 0.1:
+                        if np.linalg.norm(object_xpos - xpos) < 0.1:
                             return(True)
                     return(False)
                         
@@ -201,6 +210,7 @@ class FetchEnv(robot_env.RobotEnv):
         return goal.copy()
 
     def _is_success(self, achieved_goal, desired_goal):
+        ##TODO: goal must be list if multi-goals
         d = goal_distance(achieved_goal, desired_goal)
         return (d < self.distance_threshold).astype(np.float32)
 
