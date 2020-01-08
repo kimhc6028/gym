@@ -42,7 +42,11 @@ class FetchEnv(robot_env.RobotEnv):
         self.target_range = target_range
         self.distance_threshold = distance_threshold
         self.reward_type = reward_type
-        print("Model path:", model_path)
+
+        ##A switch to use multiple objects
+        if model_path.endswith('stack.xml'):
+            self.use_stack = True
+        else: self.use_stack = False
 
         super(FetchEnv, self).__init__(
             model_path=model_path, n_substeps=n_substeps, n_actions=4,
@@ -91,6 +95,7 @@ class FetchEnv(robot_env.RobotEnv):
         dt = self.sim.nsubsteps * self.sim.model.opt.timestep
         grip_velp = self.sim.data.get_site_xvelp('robot0:grip') * dt
         robot_qpos, robot_qvel = utils.robot_get_obs(self.sim)
+        ##TODO: multiple objects
         if self.has_object:
             object_pos = self.sim.data.get_site_xpos('object0')
             # rotations
@@ -142,6 +147,7 @@ class FetchEnv(robot_env.RobotEnv):
 
         # Randomize start position of object.
         if self.has_object:
+            '''
             object_xpos = self.initial_gripper_xpos[:2]
             while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
                 object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
@@ -149,11 +155,41 @@ class FetchEnv(robot_env.RobotEnv):
             assert object_qpos.shape == (7,)
             object_qpos[:2] = object_xpos
             self.sim.data.set_joint_qpos('object0:joint', object_qpos)
+            '''
+            ####################
+            if self.use_stack:
+                def not_far(object_xpos, xposes):
+                    for xpos in xposes:
+                        if np.linalg.norm(object_xpos, xpos) < 0.1:
+                            return(True)
+                    return(False)
+                        
+                x_poses = [self.initial_gripper_xpos[:2]]
+                for i in range(6):
+                    object_xpos = self.initial_gripper_xpos[:2]
+                    #while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
+                    while not_far(object_xpos, xposes):
+                        object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
+                    object_qpos = self.sim.data.get_joint_qpos('object{}:joint'.format(i))
+                    assert object_qpos.shape == (7,)
+                    object_qpos[:2] = object_xpos
+                    self.sim.data.set_joint_qpos('object{}:joint'.format(i), object_qpos)
+                    x_poses.append(object_xpos)
+            else:
+                object_xpos = self.initial_gripper_xpos[:2]
+                while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
+                    object_xpos = self.initial_gripper_xpos[:2] + self.np_random.uniform(-self.obj_range, self.obj_range, size=2)
+                object_qpos = self.sim.data.get_joint_qpos('object0:joint')
+                assert object_qpos.shape == (7,)
+                object_qpos[:2] = object_xpos
+                self.sim.data.set_joint_qpos('object0:joint', object_qpos)
+            ####################
 
         self.sim.forward()
         return True
 
     def _sample_goal(self):
+        ##TODO: multi-objects
         if self.has_object:
             goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range, size=3)
             goal += self.target_offset
@@ -184,8 +220,8 @@ class FetchEnv(robot_env.RobotEnv):
 
         # Extract information for sampling goals.
         self.initial_gripper_xpos = self.sim.data.get_site_xpos('robot0:grip').copy()
-        if self.has_object:
-            self.height_offset = self.sim.data.get_site_xpos('object0')[2]
+        ##TODO: multi-object
+        if self.has_object: self.height_offset = self.sim.data.get_site_xpos('object0')[2]
 
     def render(self, mode='human', width=500, height=500):
         return super(FetchEnv, self).render(mode, width, height)
