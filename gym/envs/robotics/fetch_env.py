@@ -164,7 +164,7 @@ class FetchEnv(robot_env.RobotEnv):
                             return(True)
                     return(False)
                         
-                x_poses = [self.initial_gripper_xpos[:2]]
+                xposes = [self.initial_gripper_xpos[:2]]
                 for i in range(6):
                     object_xpos = self.initial_gripper_xpos[:2]
                     #while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
@@ -174,7 +174,7 @@ class FetchEnv(robot_env.RobotEnv):
                     assert object_qpos.shape == (7,)
                     object_qpos[:2] = object_xpos
                     self.sim.data.set_joint_qpos('object{}:joint'.format(i), object_qpos)
-                    x_poses.append(object_xpos)
+                    xposes.append(object_xpos)
             else:
                 object_xpos = self.initial_gripper_xpos[:2]
                 while np.linalg.norm(object_xpos - self.initial_gripper_xpos[:2]) < 0.1:
