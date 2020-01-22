@@ -368,6 +368,20 @@ for reward_type in ['sparse', 'dense']:
     )
 
     register(
+        id='FetchPickAndPlace500{}-v1'.format(suffix),
+        entry_point='gym.envs.robotics:FetchPickAndPlaceEnv',
+        kwargs=kwargs,
+        max_episode_steps=500,
+    )
+
+    register(
+        id='FetchStack500{}-v1'.format(suffix),
+        entry_point='gym.envs.robotics:FetchStackEnv',
+        kwargs=kwargs,
+        max_episode_steps=500,
+    )
+
+    register(
         id='FetchReach{}-v1'.format(suffix),
         entry_point='gym.envs.robotics:FetchReachEnv',
         kwargs=kwargs,
